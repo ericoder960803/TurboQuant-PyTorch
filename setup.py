@@ -3,7 +3,7 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 setup(
     name='turboquant-pytorch',
-    version='0.1.0',
+    version='0.1.1',
     packages=['turboquant'],
     ext_modules=[
         CppExtension(
