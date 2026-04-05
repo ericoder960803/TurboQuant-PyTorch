@@ -2,7 +2,7 @@ from setuptools import setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 setup(
-    name='turboquant',
+    name='turboquant-pytorch',
     version='0.1.0',
     packages=['turboquant'],
     ext_modules=[
