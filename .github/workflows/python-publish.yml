@@ -1,12 +1,21 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   build-n-publish:
-    name: Build and publish to PyPI (Python ${{ matrix.python-version }})
+    name: Build and publish (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     
-    # 使用策略矩陣 (Matrix Strategy)
+    # 設定矩陣策略
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11"]
+      # 如果其中一個版本失敗，其他版本繼續執行
+      fail-fast: false
 
     permissions:
       id-token: write
@@ -30,3 +39,7 @@ jobs:
 
     - name: Publish package to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        # 關鍵：允許上傳重複的版本檔案（因為多個 Job 會推同一個版號）
+        # 這樣 3.9 傳完後，3.10 傳的時候才不會因為版號相同而被 PyPI 擋掉
+        skip-existing: true
