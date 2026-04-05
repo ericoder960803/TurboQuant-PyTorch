@@ -1,0 +1,43 @@
+# --- macOS 系統檔案 ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# --- Python 相關 (包含 C++/LibTorch 編譯產出的檔) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- C++ 編譯產物 ---
+*.o
+*.obj
+*.a
+*.lib
+*.dylib
+bin/
+
+# --- IDE (VS Code) ---
+.vscode/
+.history/
