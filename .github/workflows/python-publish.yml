@@ -1,67 +1,30 @@
-name: Build and Publish to PyPI
+name: Simple Publish to PyPI
 
 on:
   push:
     tags:
-      - 'v*' # 當你推送到 v0.1.1 這種 tag 時觸發
+      - 'v*'
 
 jobs:
-  # 第一階段：編譯各種版本的 Wheel 檔案
-  build_wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest] # 如果要支援 Windows 可加 windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.16.2
-        env:
-          # 指定編譯的 Python 版本 (例如 3.10, 3.11)
-          CIBW_BUILD: "cp310-manylinux_x86_64 cp311-manylinux_x86_64"
-          # 編譯前需要先安裝的依賴 (例如 torch)
-          CIBW_BEFORE_BUILD: "pip install torch"
-
-      - name: temp
-        uses: actions/upload-artifact@v4
-        with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
-          path: ./wheelhouse/*.whl # cibw 的成品在這裡
-
-  # 第二階段：產生原始碼包 (sdist)
-  build_sdist:
-    name: Build source distribution
+  build_and_publish:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build sdist
-        run: pipx run build --sdist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cibw-sdist
-          path: dist/*.tar.gz
-
-  # 第三階段：正式發布到 PyPI
-  upload_pypi:
-    needs: [build_wheels, build_sdist]
-    runs-on: ubuntu-latest
-    environment: pypi
     permissions:
-      id-token: write # 重要：PyPI Attestation 驗證身份必備
+      id-token: write
     steps:
-      - name: 下載所有成品
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          pattern: cibw-*
-          path: dist
-          merge-multiple: true
+          python-version: "3.10"
+
+      - name: Build sdist (只打包原始碼，跳過編譯)
+        run: |
+          pip install build
+          python -m build --sdist
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # 解決你遇到的 400 錯誤：若檔案已存在則跳過，不報錯
-          skip-existing: true 
+          skip-existing: true
           verbose: true
