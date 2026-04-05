@@ -9,40 +9,51 @@ jobs:
   build_wheels:
     name: Build wheels
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-14, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
         env:
-          # 💡 先編譯一個版本 (3.10) 確保成功，節省你等待的時間
-          CIBW_BUILD: "cp310-manylinux_x86_64"
-          CIBW_BEFORE_BUILD: "pip install torch"
-          # 🔥 終極修復：手動注入路徑並徹底排除所有 PyTorch 核心庫
+          # 🔥 支援多 Python
+          CIBW_BUILD: "cp310-* cp311-* cp312-*"
+
+          # 🔥 不 build PyPy / musllinux
+          CIBW_SKIP: "pp* *musllinux*"
+
+          # 🔥 固定 torch 版本（避免 ABI 地雷）
+          CIBW_BEFORE_BUILD: "pip install torch==2.2.2"
+
+          # 🔥 Linux repair（你的強化版）
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            LD_LIBRARY_PATH=$(python -c 'import torch; print(torch.utils.cmake_prefix_path + "/../lib")'):$LD_LIBRARY_PATH 
-            auditwheel repair 
-            --exclude libtorch_cpu.so 
-            --exclude libtorch.so 
-            --exclude libc10.so 
-            --exclude libtorch_python.so 
-            --exclude libshm.so 
-            --exclude libgomp.so.1 
+            LD_LIBRARY_PATH=$(python -c 'import torch, os; print(os.path.join(torch.__path__[0], "lib"))'):$LD_LIBRARY_PATH
+            auditwheel repair
+            --exclude libtorch*.so
+            --exclude libc10*.so
+            --exclude libgomp*.so
             -w {dest_dir} {wheel}
 
       - name: Store wheels
         uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels
+          name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
   build_sdist:
-    name: Build source distribution
+    name: Build sdist
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Build sdist
         run: pipx run build --sdist
+
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-sdist
@@ -53,6 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write 
+
     steps:
       - name: Download all
         uses: actions/download-artifact@v4
@@ -64,5 +76,5 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          skip-existing: true 
+          skip-existing: true
           verbose: true
